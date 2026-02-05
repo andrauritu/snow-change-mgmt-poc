@@ -16,4 +16,5 @@ jobs:
           SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
           SN_USERNAME: ${{ secrets.SN_USERNAME }}
           SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+          SN_STD_TEMPLATE_SYSID: ${{ secrets.SN_STD_TEMPLATE_SYSID }}
         run: python scripts/probe_snow.py
