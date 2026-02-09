@@ -1,19 +1,20 @@
-name: SNOW Probe
+name: SNOW Create Standard Change
 
 on:
   workflow_dispatch:
 
 jobs:
-  probe:
+  create:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install requests
-      - name: Probe SNOW Change API
+      - name: Create Standard Change
         env:
           SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
           SN_USERNAME: ${{ secrets.SN_USERNAME }}
           SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
-        run: python scripts/probe_snow.py
+          SN_STD_TEMPLATE_SYSID: ${{ secrets.SN_STD_TEMPLATE_SYSID }}
+        run: python scripts/create_std_change.py
