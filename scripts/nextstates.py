@@ -9,7 +9,7 @@ user = os.environ["SN_USERNAME"]
 pw   = os.environ["SN_PASSWORD"]
 chg_sysid = os.environ["SN_CHG_SYSID"]
 
-url = f"{base}/api/sn_chg_rest/v1/change/standard/{chg_sysid}/nextstates"
+url = f"{base}/api/sn_chg_rest/change/{chg_sysid}/nextstates"
 
 print(f"Fetching next states for change sys_id: {chg_sysid}")
 r = requests.get(url, auth=(user, pw), headers={"Accept": "application/json"})
