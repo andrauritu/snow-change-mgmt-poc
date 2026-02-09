@@ -13,6 +13,6 @@ print("Status:", r.status_code)
 print("Body (first 500 chars):", r.text[:500])
 r.raise_for_status()
 
-rec = r.json()["result"][0]
+rec = r.json()["result"]
 print("CHG:", rec["number"]["value"])
 print("sys_id:", rec["sys_id"]["value"])
