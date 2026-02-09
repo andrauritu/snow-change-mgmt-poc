@@ -102,14 +102,6 @@ jobs:
       
       - run: pip install requests
       
-      - name: Update Work Notes and Closure Fields
-        env:
-          SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
-          DEPLOYMENT_SUCCESS: ${{ needs.deploy_application.result == 'success' }}
-          VERSION: ${{ inputs.version }}
-          PIPELINE_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: python scripts/update_work_notes.py
-      
       - name: Move to Review State (if deployment succeeded)
         if: ${{ needs.deploy_application.result == 'success' }}
         continue-on-error: true
