@@ -21,31 +21,33 @@ if r.status_code != 200:
 
 result = r.json().get("result", {})
 
+print("\n--- Raw Response ---")
+print(json.dumps(result, indent=2)[:1000])
+
 if "current_state" in result:
     current = result["current_state"]
-    print(f"\nCurrent state: {current.get('display_value', 'unknown')} (value={current.get('value', '?')})")
+    if isinstance(current, dict):
+        print(f"\nCurrent state: {current.get('display_value', 'unknown')} (value={current.get('value', '?')})")
+    else:
+        print(f"\nCurrent state: {current}")
 
 transitions = result.get("available_states", [])
 print(f"\nAvailable transitions ({len(transitions)}):")
 for t in transitions:
-    available = t.get("transition_available", False)
-    marker = "✓" if available else "✗"
-    print(f"  {marker} {t.get('display_value', '?')} (value={t.get('value', '?')}) - available={available}")
-    
-    if not available and "not_available_reason" in t:
-        print(f"      Reason: {t['not_available_reason']}")
+    if isinstance(t, str):
+        print(f"  ✓ {t}")
+    elif isinstance(t, dict):
+        available = t.get("transition_available", False)
+        marker = "✓" if available else "✗"
+        print(f"  {marker} {t.get('display_value', '?')} (value={t.get('value', '?')}) - available={available}")
+        
+        if not available and "not_available_reason" in t:
+            print(f"      Reason: {t['not_available_reason']}")
 
 print("\n--- Machine-readable output ---")
 summary = {
     "chg_sysid": chg_sysid,
-    "current_state": result.get("current_state", {}),
-    "available_states": [
-        {
-            "value": s.get("value"),
-            "display_value": s.get("display_value"),
-            "transition_available": s.get("transition_available", False)
-        }
-        for s in transitions
-    ]
+    "current_state": result.get("current_state"),
+    "available_states": transitions
 }
 print(json.dumps(summary, indent=2))
