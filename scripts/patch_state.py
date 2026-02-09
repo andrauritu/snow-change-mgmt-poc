@@ -1,50 +1,30 @@
 import os
 import sys
-import json
 import requests
 
-base = os.environ["SN_INSTANCE"].rstrip("/")
-user = os.environ["SN_USERNAME"]
-pw   = os.environ["SN_PASSWORD"]
-chg_sysid = os.environ["SN_CHG_SYSID"]
+instance = os.environ["SN_INSTANCE"].rstrip("/")
+username = os.environ["SN_USERNAME"]
+password = os.environ["SN_PASSWORD"]
+change_id = os.environ["SN_CHG_SYSID"]
 target_state = os.environ["SN_TARGET_STATE"]
 
-url = f"{base}/api/sn_chg_rest/change/standard/{chg_sysid}"
+url = f"{instance}/api/sn_chg_rest/change/standard/{change_id}"
+payload = {"state": target_state}
 
-print(f"Patching change {chg_sysid} to state: {target_state}")
-
-payload = {
-    "state": target_state
-}
-
-r = requests.patch(
+response = requests.patch(
     url,
-    auth=(user, pw),
+    auth=(username, password),
     headers={"Accept": "application/json", "Content-Type": "application/json"},
     json=payload
 )
 
-print("Status:", r.status_code)
-
-if r.status_code not in [200, 201]:
-    print("ERROR - Response body:")
-    print(r.text[:1000])
+if response.status_code not in [200, 201]:
+    print(f"Error: HTTP {response.status_code}")
+    print(response.text[:500])
     sys.exit(1)
 
-result = r.json().get("result", {})
+result = response.json().get("result", {})
+change_number = result.get("number", {}).get("value", "?")
+new_state = result.get("state", {}).get("display_value", "?")
+print(f"{change_number} → {new_state}")
 
-print("\n--- Updated Change ---")
-print(f"CHG: {result.get('number', {}).get('value', '?')}")
-print(f"sys_id: {result.get('sys_id', {}).get('value', '?')}")
-print(f"State: {result.get('state', {}).get('display_value', '?')} (value={result.get('state', {}).get('value', '?')})")
-
-print("\n--- Machine-readable output ---")
-summary = {
-    "chg_sysid": chg_sysid,
-    "chg_number": result.get("number", {}).get("value"),
-    "new_state": {
-        "value": result.get("state", {}).get("value"),
-        "display_value": result.get("state", {}).get("display_value")
-    }
-}
-print(json.dumps(summary, indent=2))
