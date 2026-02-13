@@ -24,7 +24,14 @@ if response.status_code not in [200, 201]:
     print(response.text[:500])
     sys.exit(1)
 
-result = response.json()["result"]
+try:
+    result = response.json()["result"]
+except Exception as e:
+    print(f"Error parsing response: {e}")
+    print(f"Status code: {response.status_code}")
+    print(f"Response text: {response.text[:500]}")
+    sys.exit(1)
+
 chg_number = result["number"]["value"]
 chg_sysid = result["sys_id"]["value"]
 
