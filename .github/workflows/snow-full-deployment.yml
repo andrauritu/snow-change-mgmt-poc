@@ -30,6 +30,7 @@ jobs:
     outputs:
       chg_sysid: ${{ steps.output_vars.outputs.chg_sysid }}
       chg_number: ${{ steps.output_vars.outputs.chg_number }}
+      chg_description: ${{ steps.output_vars.outputs.chg_description }}
     steps:
       - uses: actions/checkout@v4
       
@@ -73,7 +74,7 @@ jobs:
           SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
           SN_TARGET_STATE: "-1"
         run: |
-          pip install requests
+          pip install requests docxtpl
           python scripts/patch_state.py
       
       - name: Get Implement task
@@ -83,19 +84,28 @@ jobs:
           SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
         run: python scripts/get_tasks.py
       
-      - name: Generate evidence file
+      - name: Parse CHANGELOG
+        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
+        id: parse_changelog
+        env:
+          VERSION: ${{ inputs.version }}
+        run: python scripts/parse_changelog.py
+      
+      - name: Fill DOCX template
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         env:
-          SN_CHG_NUMBER: ${{ needs.create_snow_change.outputs.chg_number }}
-          VERSION: ${{ inputs.version }}
-          PIPELINE_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: python scripts/generate_evidence.py
+          CHG_NUMBER: ${{ needs.create_snow_change.outputs.chg_number }}
+          CHG_DESCRIPTION: ${{ needs.create_snow_change.outputs.chg_description }}
+          BACKEND_SCOPE: ${{ steps.parse_changelog.outputs.backend_scope }}
+          DATA_SCOPE: ${{ steps.parse_changelog.outputs.data_scope }}
+          FRONTEND_SCOPE: ${{ steps.parse_changelog.outputs.frontend_scope }}
+        run: python scripts/fill_template.py
       
-      - name: Upload attachment to task
+      - name: Upload DOCX template to task
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         env:
           SN_TASK_SYSID: ${{ steps.get_task.outputs.implement_task_sysid }}
-          EVIDENCE_FILE_PATH: deployment-evidence.txt
+          EVIDENCE_FILE_PATH: Service_Validation_And_Testing_DRAFT.docx
         run: python scripts/upload_attachment.py
       
       - name: Close Implement task

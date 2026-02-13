@@ -23,7 +23,7 @@ params = {
 response = requests.post(
     url,
     auth=(username, password),
-    headers={"Content-Type": "text/plain"},
+    headers={"Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
     params=params,
     data=file_content
 )
@@ -35,10 +35,6 @@ if response.status_code not in [200, 201]:
 
 result = response.json()["result"]
 attachment_sysid = result["sys_id"]
-download_link = result["download_link"]
-
-print(f"Uploaded attachment: {file_name}")
-print(f"Download: {download_link}")
 
 github_output = os.environ.get("GITHUB_OUTPUT")
 if github_output:
