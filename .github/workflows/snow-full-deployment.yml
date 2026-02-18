@@ -59,7 +59,9 @@ jobs:
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
     needs: 
       - create_snow_change
-    if: always() # because it runs for all envs but only creates change for prod
+    if: always() # runs for all envs but only creates change for prod
+    outputs:
+      implement_task_sysid: ${{ steps.get_task.outputs.implement_task_sysid }}
     steps:
       - uses: actions/checkout@v4   
 
@@ -91,7 +93,7 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: python scripts/parse_changelog.py
       
-      - name: Fill DOCX template
+      - name: Fill DOCX template (DRAFT)
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         env:
           CHG_NUMBER: ${{ needs.create_snow_change.outputs.chg_number }}
@@ -101,19 +103,21 @@ jobs:
           FRONTEND_SCOPE: ${{ steps.parse_changelog.outputs.frontend_scope }}
         run: python scripts/fill_template.py
       
-      - name: Upload DOCX template to task
+      - name: Upload DRAFT to "SharePoint" (simulated via artifact)
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
-        env:
-          SN_TASK_SYSID: ${{ steps.get_task.outputs.implement_task_sysid }}
-          EVIDENCE_FILE_PATH: Service_Validation_And_Testing_DRAFT.docx
-        run: python scripts/upload_attachment.py
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-testing-draft
+          path: Service_Validation_And_Testing_DRAFT.docx
+          retention-days: 5
       
-      - name: Close Implement task
+      - name: Notify developers (simulated)
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
-        env:
-          SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
-          SN_TASK_SYSID: ${{ steps.get_task.outputs.implement_task_sysid }}
-        run: python scripts/close_task.py
+        run: |
+          echo "DRAFT template uploaded to SharePoint (simulated)"
+          echo "SharePoint link: https://sharepoint.example.com/change-${{ needs.create_snow_change.outputs.chg_number }}"
+          echo ""
+          echo "Developers: Please complete the template, then approve the 'Finalize' stage to attach it to ServiceNow"
       
       - name: "[PLACEHOLDER] Deploy Application"
         run: |
@@ -121,18 +125,19 @@ jobs:
           sleep 2
           echo "Deployment complete"
       
-  # JOB 3: Finalize ServiceNow Change (prod only)
-  finalize_snow_change:
-    name: Update ServiceNow Change
-    if: ${{ always() && inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
+  # JOB 3: Finalize
+  finalize:
+    name: Finalize (manual approval gate)
+    needs: 
+      - create_snow_change
+      - deploy_application
+    if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && needs.deploy_application.result == 'success' }}
     runs-on: ubuntu-latest
+    environment: finalize
     env:
       SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
-    needs:
-      - create_snow_change
-      - deploy_application
     steps:
       - uses: actions/checkout@v4
       
@@ -141,8 +146,48 @@ jobs:
       
       - run: pip install requests
       
-      - name: Move to Review State (if deployment succeeded)
-        if: ${{ needs.deploy_application.result == 'success' }}
+      - name: Download completed template from "SharePoint" (simulated)
+        uses: actions/download-artifact@v4
+        with:
+          name: validation-testing-draft
+      
+      - name: Attach completed template to ServiceNow task
+        env:
+          SN_TASK_SYSID: ${{ needs.deploy_application.outputs.implement_task_sysid }}
+          EVIDENCE_FILE_PATH: Service_Validation_And_Testing_DRAFT.docx
+        run: |
+          echo "Attaching completed template to ServiceNow task..."
+          python scripts/upload_attachment.py
+      
+      - name: Close Implement task
+        env:
+          SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
+          SN_TASK_SYSID: ${{ needs.deploy_application.outputs.implement_task_sysid }}
+        run: |
+          echo "Closing Implement task..."
+          python scripts/close_task.py
+      
+  # JOB 4: Move to Review
+  move_to_review:
+    name: Move Change to Review
+    if: ${{ inputs.env == 'prod' && needs.finalize.result == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
+      SN_USERNAME: ${{ secrets.SN_USERNAME }}
+      SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+    needs:
+      - create_snow_change
+      - finalize
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      
+      - run: pip install requests
+      
+      - name: Move to Review State
         continue-on-error: true
         env:
           SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
