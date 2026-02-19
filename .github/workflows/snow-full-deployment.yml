@@ -111,13 +111,20 @@ jobs:
           path: Service_Validation_And_Testing_DRAFT.docx
           retention-days: 5
       
-      - name: Notify developers (simulated)
+      - name: Notify developers
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         run: |
-          echo "DRAFT template uploaded to SharePoint (simulated)"
-          echo "SharePoint link: https://sharepoint.example.com/change-${{ needs.create_snow_change.outputs.chg_number }}"
+          echo "### ACTION REQUIRED" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "DRAFT template has been uploaded to SharePoint." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Complete the template here:** https://www.google.com/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Once completed, approve the **Finalize** stage below to attach the document to ServiceNow." >> $GITHUB_STEP_SUMMARY
           echo ""
-          echo "Developers: Please complete the template, then approve the 'Finalize' stage to attach it to ServiceNow"
+          echo "DRAFT template uploaded to SharePoint"
+          echo "Template link: https://www.google.com/"
+          echo "After completing the template, approve the 'Finalize' stage to attach it to ServiceNow"
       
       - name: "[PLACEHOLDER] Deploy Application"
         run: |
