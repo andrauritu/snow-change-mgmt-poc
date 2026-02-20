@@ -118,6 +118,15 @@ jobs:
           echo "Set use_sharepoint=false to proceed with artifact-based simulation."
           exit 1
       
+      - name: Store DRAFT in document store
+        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
+        id: store_upload
+        env:
+          USE_SHAREPOINT: ${{ inputs.use_sharepoint }}
+          CHG_NUMBER: ${{ needs.create_snow_change.outputs.chg_number }}
+          LOCAL_FILE_PATH: Service_Validation_And_Testing_DRAFT.docx
+        run: python scripts/store_upload.py
+      
       - name: Upload DRAFT to artifact (SharePoint simulation)
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'false' }}
         uses: actions/upload-artifact@v4
@@ -127,20 +136,19 @@ jobs:
           retention-days: 5
       
       - name: Notify developers
-        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'false' }}
+        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         run: |
           echo "### ACTION REQUIRED" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "DRAFT template has been created and stored as a pipeline artifact." >> $GITHUB_STEP_SUMMARY
+          echo "DRAFT template has been created and stored." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Note:** SharePoint is currently simulated. In the real implementation, this will be a SharePoint folder per change (e.g., CHG0012345)." >> $GITHUB_STEP_SUMMARY
+          echo "**Store link:** ${{ steps.store_upload.outputs.store_link }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Complete the template here:** https://www.google.com/" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** SharePoint is currently simulated. In the real implementation, this will be a SharePoint folder per change (e.g., ${{ needs.create_snow_change.outputs.chg_number }})." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Once completed, approve the **Finalize** stage below to attach the document to ServiceNow." >> $GITHUB_STEP_SUMMARY
           echo ""
-          echo "DRAFT template created and stored as artifact (SharePoint simulation)"
-          echo "Template link: https://www.google.com/"
+          echo "DRAFT template stored: ${{ steps.store_upload.outputs.store_link }}"
           echo "After completing the template, approve the 'Finalize' stage to attach it to ServiceNow"
       
       - name: "[PLACEHOLDER] Deploy Application"
@@ -170,18 +178,17 @@ jobs:
       
       - run: pip install requests
       
-      - name: Check SharePoint credentials
-        if: ${{ inputs.use_sharepoint == 'true' }}
-        run: |
-          echo "ERROR: SharePoint integration requested but credentials/permissions are not available yet."
-          echo "Set use_sharepoint=false to proceed with artifact-based simulation."
-          exit 1
-      
       - name: Download completed template from artifact (SharePoint simulation)
         if: ${{ inputs.use_sharepoint == 'false' }}
         uses: actions/download-artifact@v4
         with:
           name: validation-testing-draft
+      
+      - name: Verify downloaded template
+        env:
+          USE_SHAREPOINT: ${{ inputs.use_sharepoint }}
+          DOWNLOAD_TO_PATH: Service_Validation_And_Testing_DRAFT.docx
+        run: python scripts/store_download.py
       
       - name: Attach completed template to ServiceNow task
         env:
