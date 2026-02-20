@@ -15,6 +15,14 @@ on:
         required: true
         type: string
         default: 'v1.0.0-poc'
+      use_sharepoint:
+        description: 'Use SharePoint for template storage (requires credentials)'
+        required: true
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+        default: 'false'
 
 jobs:
   # JOB 1: Create ServiceNow Change (prod only)
@@ -103,8 +111,15 @@ jobs:
           FRONTEND_SCOPE: ${{ steps.parse_changelog.outputs.frontend_scope }}
         run: python scripts/fill_template.py
       
-      - name: Upload DRAFT to "SharePoint" (simulated via artifact)
-        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
+      - name: Check SharePoint credentials
+        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'true' }}
+        run: |
+          echo "ERROR: SharePoint integration requested but credentials/permissions are not available yet."
+          echo "Set use_sharepoint=false to proceed with artifact-based simulation."
+          exit 1
+      
+      - name: Upload DRAFT to artifact (SharePoint simulation)
+        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'false' }}
         uses: actions/upload-artifact@v4
         with:
           name: validation-testing-draft
@@ -112,17 +127,19 @@ jobs:
           retention-days: 5
       
       - name: Notify developers
-        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
+        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'false' }}
         run: |
           echo "### ACTION REQUIRED" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "DRAFT template has been uploaded to SharePoint." >> $GITHUB_STEP_SUMMARY
+          echo "DRAFT template has been created and stored as a pipeline artifact." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** SharePoint is currently simulated. In the real implementation, this will be a SharePoint folder per change (e.g., CHG0012345)." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Complete the template here:** https://www.google.com/" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Once completed, approve the **Finalize** stage below to attach the document to ServiceNow." >> $GITHUB_STEP_SUMMARY
           echo ""
-          echo "DRAFT template uploaded to SharePoint"
+          echo "DRAFT template created and stored as artifact (SharePoint simulation)"
           echo "Template link: https://www.google.com/"
           echo "After completing the template, approve the 'Finalize' stage to attach it to ServiceNow"
       
@@ -153,7 +170,15 @@ jobs:
       
       - run: pip install requests
       
-      - name: Download completed template from "SharePoint" (simulated)
+      - name: Check SharePoint credentials
+        if: ${{ inputs.use_sharepoint == 'true' }}
+        run: |
+          echo "ERROR: SharePoint integration requested but credentials/permissions are not available yet."
+          echo "Set use_sharepoint=false to proceed with artifact-based simulation."
+          exit 1
+      
+      - name: Download completed template from artifact (SharePoint simulation)
+        if: ${{ inputs.use_sharepoint == 'false' }}
         uses: actions/download-artifact@v4
         with:
           name: validation-testing-draft
