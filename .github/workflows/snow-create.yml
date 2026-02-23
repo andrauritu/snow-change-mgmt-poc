@@ -6,6 +6,8 @@ on:
 jobs:
   create:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}/scripts
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,4 +19,4 @@ jobs:
           SN_USERNAME: ${{ secrets.SN_USERNAME }}
           SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
           SN_STD_TEMPLATE_SYSID: ${{ secrets.SN_STD_TEMPLATE_SYSID }}
-        run: python scripts/create_std_change.py
+        run: python scripts/servicenow/create_std_change.py

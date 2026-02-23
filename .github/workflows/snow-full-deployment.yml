@@ -31,6 +31,7 @@ jobs:
     if: ${{ inputs.env == 'prod' }}
     runs-on: ubuntu-latest # in ADO this would be pool
     env:
+      PYTHONPATH: ${{ github.workspace }}/scripts
       SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
@@ -49,19 +50,20 @@ jobs:
       
       - name: Create and schedule change
         id: output_vars
-        run: python scripts/create_std_change.py
+        run: python scripts/servicenow/create_std_change.py
       
       - name: Move to Scheduled
         env:
           SN_CHG_SYSID: ${{ steps.output_vars.outputs.chg_sysid }}
           SN_TARGET_STATE: "-2"
-        run: python scripts/patch_state.py
+        run: python scripts/servicenow/patch_state.py
 
   # JOB 2: Deploy Application
   deploy_application:
     name: Deploy to ${{ inputs.env }}
     runs-on: ubuntu-latest
     env:
+      PYTHONPATH: ${{ github.workspace }}/scripts
       SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
@@ -85,21 +87,21 @@ jobs:
           SN_TARGET_STATE: "-1"
         run: |
           pip install -r requirements.txt
-          python scripts/patch_state.py
+          python scripts/servicenow/patch_state.py
       
       - name: Get Implement task
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         id: get_task
         env:
           SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
-        run: python scripts/get_tasks.py
+        run: python scripts/servicenow/get_tasks.py
       
       - name: Parse CHANGELOG
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         id: parse_changelog
         env:
           VERSION: ${{ inputs.version }}
-        run: python scripts/parse_changelog.py
+        run: python scripts/evidence/parse_changelog.py
       
       - name: Fill DOCX template (DRAFT)
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
@@ -109,7 +111,7 @@ jobs:
           BACKEND_SCOPE: ${{ steps.parse_changelog.outputs.backend_scope }}
           DATA_SCOPE: ${{ steps.parse_changelog.outputs.data_scope }}
           FRONTEND_SCOPE: ${{ steps.parse_changelog.outputs.frontend_scope }}
-        run: python scripts/fill_template.py
+        run: python scripts/evidence/fill_template.py
       
       - name: Store DRAFT in document store
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
@@ -122,7 +124,7 @@ jobs:
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
           SP_SITE_ID: ${{ secrets.SP_SITE_ID }}
-        run: python scripts/store_upload.py
+        run: python scripts/sharepoint/store_upload.py
       
       - name: Upload DRAFT to artifact (SharePoint simulation)
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'false' }}
@@ -164,6 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: finalize
     env:
+      PYTHONPATH: ${{ github.workspace }}/scripts
       SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
@@ -191,14 +194,14 @@ jobs:
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
           SP_SITE_ID: ${{ secrets.SP_SITE_ID }}
-        run: python scripts/store_download.py
+        run: python scripts/sharepoint/store_download.py
       
       - name: Verify downloaded template
         if: ${{ inputs.use_sharepoint == 'false' }}
         env:
           USE_SHAREPOINT: ${{ inputs.use_sharepoint }}
           DOWNLOAD_TO_PATH: Service_Validation_And_Testing_DRAFT.docx
-        run: python scripts/store_download.py
+        run: python scripts/sharepoint/store_download.py
       
       - name: Attach completed template to ServiceNow task
         env:
@@ -206,7 +209,7 @@ jobs:
           EVIDENCE_FILE_PATH: Service_Validation_And_Testing_DRAFT.docx
         run: |
           echo "Attaching completed template to ServiceNow task..."
-          python scripts/upload_attachment.py
+          python scripts/servicenow/upload_attachment.py
       
       - name: Close Implement task
         env:
@@ -214,7 +217,7 @@ jobs:
           SN_TASK_SYSID: ${{ needs.deploy_application.outputs.implement_task_sysid }}
         run: |
           echo "Closing Implement task..."
-          python scripts/close_task.py
+          python scripts/servicenow/close_task.py
       
   # JOB 4: Move to Review
   move_to_review:
@@ -222,6 +225,7 @@ jobs:
     if: ${{ inputs.env == 'prod' && needs.finalize.result == 'success' }}
     runs-on: ubuntu-latest
     env:
+      PYTHONPATH: ${{ github.workspace }}/scripts
       SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
@@ -241,4 +245,4 @@ jobs:
         env:
           SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
           SN_TARGET_STATE: "0"
-        run: python scripts/patch_state.py
+        run: python scripts/servicenow/patch_state.py

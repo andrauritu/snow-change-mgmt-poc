@@ -3,28 +3,34 @@ from sn_client import get_sn_session, check_response, set_output
 
 DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-instance, session = get_sn_session()
-task_sysid = os.environ["SN_TASK_SYSID"]
-file_path = os.environ["EVIDENCE_FILE_PATH"]
 
-with open(file_path, "rb") as f:
-    file_content = f.read()
+def main():
+    instance, session = get_sn_session()
+    task_sysid = os.environ["SN_TASK_SYSID"]
+    file_path = os.environ["EVIDENCE_FILE_PATH"]
 
-file_name = os.path.basename(file_path)
+    with open(file_path, "rb") as f:
+        file_content = f.read()
 
-url = f"{instance}/api/now/attachment/file"
-params = {
-    "table_name": "change_task",
-    "table_sys_id": task_sysid,
-    "file_name": file_name,
-}
+    file_name = os.path.basename(file_path)
 
-session.headers["Content-Type"] = DOCX_CONTENT_TYPE
-response = session.post(url, params=params, data=file_content)
-check_response(response)
+    url = f"{instance}/api/now/attachment/file"
+    params = {
+        "table_name": "change_task",
+        "table_sys_id": task_sysid,
+        "file_name": file_name,
+    }
 
-result = response.json()["result"]
-attachment_sysid = result["sys_id"]
-print(f"Attached: {file_name} ({attachment_sysid})")
+    session.headers["Content-Type"] = DOCX_CONTENT_TYPE
+    response = session.post(url, params=params, data=file_content)
+    check_response(response)
 
-set_output("attachment_sysid", attachment_sysid)
+    result = response.json()["result"]
+    attachment_sysid = result["sys_id"]
+    print(f"Attached: {file_name} ({attachment_sysid})")
+
+    set_output("attachment_sysid", attachment_sysid)
+
+
+if __name__ == "__main__":
+    main()
