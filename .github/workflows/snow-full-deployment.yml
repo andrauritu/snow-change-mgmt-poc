@@ -45,7 +45,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       
-      - run: pip install requests
+      - run: pip install -r requirements.txt
       
       - name: Create and schedule change
         id: output_vars
@@ -84,7 +84,7 @@ jobs:
           SN_CHG_SYSID: ${{ needs.create_snow_change.outputs.chg_sysid }}
           SN_TARGET_STATE: "-1"
         run: |
-          pip install requests docxtpl
+          pip install -r requirements.txt
           python scripts/patch_state.py
       
       - name: Get Implement task
@@ -173,7 +173,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       
-      - run: pip install requests
+      - run: pip install -r requirements.txt
       
       - name: Download completed template from artifact (SharePoint simulation)
         if: ${{ inputs.use_sharepoint == 'false' }}
@@ -234,7 +234,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       
-      - run: pip install requests
+      - run: pip install -r requirements.txt
       
       - name: Move to Review State
         continue-on-error: true

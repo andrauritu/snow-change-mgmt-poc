@@ -1,10 +1,9 @@
 import os
-import sys
-import requests
+from sn_client import get_sn_session, check_response, set_output
 
-instance = os.environ["SN_INSTANCE"].rstrip("/")
-username = os.environ["SN_USERNAME"]
-password = os.environ["SN_PASSWORD"]
+DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+instance, session = get_sn_session()
 task_sysid = os.environ["SN_TASK_SYSID"]
 file_path = os.environ["EVIDENCE_FILE_PATH"]
 
@@ -17,26 +16,15 @@ url = f"{instance}/api/now/attachment/file"
 params = {
     "table_name": "change_task",
     "table_sys_id": task_sysid,
-    "file_name": file_name
+    "file_name": file_name,
 }
 
-response = requests.post(
-    url,
-    auth=(username, password),
-    headers={"Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
-    params=params,
-    data=file_content
-)
-
-if response.status_code not in [200, 201]:
-    print(f"Error: HTTP {response.status_code}")
-    print(response.text[:500])
-    sys.exit(1)
+session.headers["Content-Type"] = DOCX_CONTENT_TYPE
+response = session.post(url, params=params, data=file_content)
+check_response(response)
 
 result = response.json()["result"]
 attachment_sysid = result["sys_id"]
+print(f"Attached: {file_name} ({attachment_sysid})")
 
-github_output = os.environ.get("GITHUB_OUTPUT")
-if github_output:
-    with open(github_output, "a") as f:
-        f.write(f"attachment_sysid={attachment_sysid}\n")
+set_output("attachment_sysid", attachment_sysid)

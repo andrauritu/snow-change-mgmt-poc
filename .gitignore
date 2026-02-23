@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+*.docx
+!templates/*.docx
+deployment-evidence.txt
+
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db

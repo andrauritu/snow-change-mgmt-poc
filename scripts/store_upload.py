@@ -49,5 +49,5 @@ else:
     print(f"Change: {chg_number}")
     print(f"Store link: {store_link}")
 
-with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-    f.write(f"store_link={store_link}\n")
+from sn_client import set_output
+set_output("store_link", store_link)

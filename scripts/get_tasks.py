@@ -1,37 +1,31 @@
 import os
 import sys
-import requests
+from sn_client import get_sn_session, check_response, set_output
 
-instance = os.environ["SN_INSTANCE"].rstrip("/")
-username = os.environ["SN_USERNAME"]
-password = os.environ["SN_PASSWORD"]
+TASK_TYPE_IMPLEMENT = "implementation"
+
+instance, session = get_sn_session()
 change_id = os.environ["SN_CHG_SYSID"]
 
 url = f"{instance}/api/sn_chg_rest/v1/change/{change_id}/task"
-response = requests.get(url, auth=(username, password), headers={"Accept": "application/json"})
-
-if response.status_code != 200:
-    print(response.text[:500])
-    sys.exit(1)
+response = session.get(url)
+check_response(response, expected=(200,))
 
 tasks = response.json()["result"]
 
 implement_task = None
 for task in tasks:
-    if task["change_task_type"]["value"] == "implementation":
+    if task["change_task_type"]["value"] == TASK_TYPE_IMPLEMENT:
         implement_task = task
         break
 
 if not implement_task:
+    print(f"ERROR: No '{TASK_TYPE_IMPLEMENT}' task found on change {change_id}")
     sys.exit(1)
 
 task_sysid = implement_task["sys_id"]["value"]
 task_number = implement_task["number"]["value"]
+print(f"Found: {task_number} ({task_sysid})")
 
-
-
-github_output = os.environ.get("GITHUB_OUTPUT")
-if github_output:
-    with open(github_output, "a") as f:
-        f.write(f"implement_task_sysid={task_sysid}\n")
-        f.write(f"implement_task_number={task_number}\n")
+set_output("implement_task_sysid", task_sysid)
+set_output("implement_task_number", task_number)
