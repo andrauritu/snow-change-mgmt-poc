@@ -111,13 +111,6 @@ jobs:
           FRONTEND_SCOPE: ${{ steps.parse_changelog.outputs.frontend_scope }}
         run: python scripts/fill_template.py
       
-      - name: Check SharePoint credentials
-        if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' && inputs.use_sharepoint == 'true' }}
-        run: |
-          echo "ERROR: SharePoint integration requested but credentials/permissions are not available yet."
-          echo "Set use_sharepoint=false to proceed with artifact-based simulation."
-          exit 1
-      
       - name: Store DRAFT in document store
         if: ${{ inputs.env == 'prod' && needs.create_snow_change.result == 'success' }}
         id: store_upload
@@ -125,6 +118,10 @@ jobs:
           USE_SHAREPOINT: ${{ inputs.use_sharepoint }}
           CHG_NUMBER: ${{ needs.create_snow_change.outputs.chg_number }}
           LOCAL_FILE_PATH: Service_Validation_And_Testing_DRAFT.docx
+          SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
+          SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
+          SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
+          SP_SITE_ID: ${{ secrets.SP_SITE_ID }}
         run: python scripts/store_upload.py
       
       - name: Upload DRAFT to artifact (SharePoint simulation)
@@ -184,7 +181,20 @@ jobs:
         with:
           name: validation-testing-draft
       
+      - name: Download completed template from SharePoint
+        if: ${{ inputs.use_sharepoint == 'true' }}
+        env:
+          USE_SHAREPOINT: ${{ inputs.use_sharepoint }}
+          DOWNLOAD_TO_PATH: Service_Validation_And_Testing_DRAFT.docx
+          CHG_NUMBER: ${{ needs.create_snow_change.outputs.chg_number }}
+          SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
+          SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
+          SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
+          SP_SITE_ID: ${{ secrets.SP_SITE_ID }}
+        run: python scripts/store_download.py
+      
       - name: Verify downloaded template
+        if: ${{ inputs.use_sharepoint == 'false' }}
         env:
           USE_SHAREPOINT: ${{ inputs.use_sharepoint }}
           DOWNLOAD_TO_PATH: Service_Validation_And_Testing_DRAFT.docx
