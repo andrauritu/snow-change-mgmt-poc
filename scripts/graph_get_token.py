@@ -17,19 +17,19 @@ def get_token():
     })
 
     if response.status_code != 200:
-        print(f"ERROR: Token request failed with HTTP {response.status_code}")
-        print(response.text[:500])
-        sys.exit(1)
+        raise RuntimeError(f"Token request failed with HTTP {response.status_code}: {response.text[:500]}")
 
     token = response.json().get("access_token")
     if not token:
-        print("ERROR: No access_token in response")
-        print(response.text[:500])
-        sys.exit(1)
+        raise RuntimeError("No access_token in response")
 
     return token
 
 
 if __name__ == "__main__":
-    token = get_token()
-    print(f"TOKEN_OK (length={len(token)})")
+    try:
+        token = get_token()
+        print(f"TOKEN_OK (length={len(token)})")
+    except Exception as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)

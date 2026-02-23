@@ -1,5 +1,4 @@
 import os
-import sys
 import requests
 
 
@@ -20,9 +19,7 @@ def get_sn_session():
 
 def check_response(response, expected=(200, 201)):
     if response.status_code not in expected:
-        print(f"ERROR: HTTP {response.status_code}")
-        print(response.text[:500])
-        sys.exit(1)
+        raise RuntimeError(f"HTTP {response.status_code}: {response.text[:500]}")
 
 
 def set_output(key, value):
