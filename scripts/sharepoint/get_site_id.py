@@ -1,6 +1,6 @@
 import sys
 import requests
-from graph_get_token import get_token
+from utils.graph_get_token import get_token
 
 
 def main():

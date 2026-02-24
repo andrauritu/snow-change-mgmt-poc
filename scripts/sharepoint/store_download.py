@@ -9,7 +9,7 @@ def main():
         download_to_path = os.environ["DOWNLOAD_TO_PATH"]
 
         if use_sharepoint == "true":
-            from graph_get_token import get_token
+            from utils.graph_get_token import get_token
 
             chg_number = os.environ["CHG_NUMBER"]
             token = get_token()

@@ -1,6 +1,6 @@
 import os
 import sys
-from sn_client import get_sn_session, check_response, set_output
+from utils.sn_client import get_sn_session, check_response, set_output
 
 
 def main():

@@ -1,7 +1,7 @@
 import os
 import sys
 import requests
-from sn_client import set_output
+from utils.sn_client import set_output
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
         file_size = os.path.getsize(local_file_path)
 
         if use_sharepoint == "true":
-            from graph_get_token import get_token
+            from utils.graph_get_token import get_token
 
             token = get_token()
             site_id = os.environ["SP_SITE_ID"]

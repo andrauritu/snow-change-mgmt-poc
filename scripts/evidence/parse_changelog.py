@@ -1,6 +1,6 @@
 
 import sys
-from sn_client import set_output
+from utils.sn_client import set_output
 
 # for now i will just output N/A for all scope fields but we should take it from changelog eventually
 def main():
