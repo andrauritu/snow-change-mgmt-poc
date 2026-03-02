@@ -1,5 +1,6 @@
 import os
 import sys
+from urllib.parse import urlparse
 import requests
 
 
@@ -9,16 +10,18 @@ def main():
         download_to_path = os.environ["DOWNLOAD_TO_PATH"]
 
         if use_sharepoint == "true":
-            from utils.graph_get_token import get_token
+            from utils.sp_get_token import get_token
 
             chg_number = os.environ["CHG_NUMBER"]
             token = get_token()
-            site_id = os.environ["SP_SITE_ID"]
+            site_url = os.environ["SP_SITE_URL"].rstrip("/")
             base_folder = os.environ.get("SP_FOLDER", "GDSN/ReleaseEvidence")
-            folder = f"{base_folder}/{chg_number}"
+
+            site_relative = urlparse(site_url).path
+            folder_server_relative = f"{site_relative}/Shared Documents/{base_folder}/{chg_number}"
 
             file_name = os.path.basename(download_to_path)
-            download_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/root:/{folder}/{file_name}:/content"
+            download_url = f"{site_url}/_api/web/GetFolderByServerRelativeUrl('{folder_server_relative}')/Files('{file_name}')/$value"
 
             download_resp = requests.get(download_url, headers={
                 "Authorization": f"Bearer {token}",

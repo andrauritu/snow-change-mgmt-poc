@@ -1,7 +1,23 @@
 import os
 import sys
+from urllib.parse import urlparse
 import requests
 from utils.sn_client import set_output
+
+DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+def ensure_folder_exists(site_url, folder_server_relative, headers):
+    resp = requests.post(
+        f"{site_url}/_api/web/folders",
+        headers={**headers, "Content-Type": "application/json;odata=verbose"},
+        json={"__metadata": {"type": "SP.Folder"}, "ServerRelativeUrl": folder_server_relative},
+    )
+    if resp.status_code == 201:
+        return
+    if resp.status_code == 500 and "-2130575338" in resp.text: #this is a specific sharepoint internall error corde 
+        return  
+    raise RuntimeError(f"Folder creation failed with HTTP {resp.status_code}: {resp.text[:500]}")
 
 
 def main():
@@ -16,27 +32,39 @@ def main():
         file_size = os.path.getsize(local_file_path)
 
         if use_sharepoint == "true":
-            from utils.graph_get_token import get_token
+            from utils.sp_get_token import get_token
 
             token = get_token()
-            site_id = os.environ["SP_SITE_ID"]
+            site_url = os.environ["SP_SITE_URL"].rstrip("/")
             base_folder = os.environ.get("SP_FOLDER", "GDSN/ReleaseEvidence")
-            folder = f"{base_folder}/{chg_number}"
+
+            site_relative = urlparse(site_url).path
+            folder_server_relative = f"{site_relative}/Shared Documents/{base_folder}/{chg_number}"
+
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json;odata=verbose",
+            }
+
+            ensure_folder_exists(site_url, folder_server_relative, headers)
 
             file_name = os.path.basename(local_file_path)
-            upload_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/root:/{folder}/{file_name}:/content"
+            upload_url = f"{site_url}/_api/web/GetFolderByServerRelativeUrl('{folder_server_relative}')/Files/add(url='{file_name}',overwrite=true)"
 
             with open(local_file_path, "rb") as f:
-                upload_resp = requests.put(upload_url, headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                }, data=f)
+                file_content = f.read()
 
-            if upload_resp.status_code not in [200, 201]:
+            upload_resp = requests.post(upload_url, headers={
+                **headers,
+                "Content-Type": DOCX_CONTENT_TYPE,
+            }, data=file_content)
+
+            if upload_resp.status_code not in (200, 201):
                 raise RuntimeError(f"Upload failed with HTTP {upload_resp.status_code}: {upload_resp.text[:500]}")
 
-            result = upload_resp.json()
-            store_link = result.get("webUrl", upload_url)
+            server_relative = upload_resp.json()["d"]["ServerRelativeUrl"]
+            hostname = f"https://{urlparse(site_url).hostname}"
+            store_link = f"{hostname}{server_relative}"
 
             print(f"Document store: SharePoint")
             print(f"File: {local_file_path} ({file_size} bytes)")

@@ -123,7 +123,7 @@ jobs:
           SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
-          SP_SITE_ID: ${{ secrets.SP_SITE_ID }}
+          SP_SITE_URL: ${{ secrets.SP_SITE_URL }}
         run: python scripts/sharepoint/store_upload.py
       
       - name: Upload DRAFT to artifact (SharePoint simulation)
@@ -193,7 +193,7 @@ jobs:
           SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
-          SP_SITE_ID: ${{ secrets.SP_SITE_ID }}
+          SP_SITE_URL: ${{ secrets.SP_SITE_URL }}
         run: python scripts/sharepoint/store_download.py
       
       - name: Verify downloaded template

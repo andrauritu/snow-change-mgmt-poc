@@ -13,7 +13,7 @@ def get_token():
         "grant_type": "client_credentials",
         "client_id": client_id,
         "client_secret": client_secret,
-        "scope": "https://graph.microsoft.com/.default",
+        "scope": "https://pgone.sharepoint.com/.default",
     })
 
     if response.status_code != 200:
