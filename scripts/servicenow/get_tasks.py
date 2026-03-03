@@ -1,9 +1,7 @@
 import os
 import sys
-from utils.sn_client import get_sn_session, check_response, set_output
-
-TASK_TYPE_IMPLEMENT = "implementation"
-
+from utils.sn_utils import get_sn_session, check_response, set_output
+from servicenow.constants import TASK_TYPE_IMPLEMENT
 
 def main():
     try:

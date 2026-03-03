@@ -1,7 +1,6 @@
 import os
 import requests
 
-
 def get_sn_session():
     instance = os.environ["SN_INSTANCE"].rstrip("/")
     username = os.environ["SN_USERNAME"]

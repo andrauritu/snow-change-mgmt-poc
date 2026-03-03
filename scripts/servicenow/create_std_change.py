@@ -1,13 +1,13 @@
 import os
 import sys
-from utils.sn_client import get_sn_session, check_response, set_output
-
+from utils.sn_utils import get_sn_session, check_response, set_output
+from servicenow.constants import DEFAULT_CHG_DESCRIPTION
 
 def main():
     try:
         instance, session = get_sn_session()
         template_id = os.environ["SN_STD_TEMPLATE_SYSID"]
-        description = os.environ.get("CHG_DESCRIPTION", "DPMD GDSN+ Release")
+        description = os.environ.get("CHG_DESCRIPTION", DEFAULT_CHG_DESCRIPTION)
 
         url = f"{instance}/api/sn_chg_rest/v1/change/standard/{template_id}"
         response = session.post(url, params={"short_description": description}, json={})

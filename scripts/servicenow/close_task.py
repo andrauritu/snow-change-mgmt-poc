@@ -1,9 +1,7 @@
 import os
 import sys
-from utils.sn_client import get_sn_session, check_response
-
-STATE_CLOSED = 3
-
+from utils.sn_utils import get_sn_session, check_response
+from servicenow.constants import STATE_CLOSED
 
 def main():
     try:

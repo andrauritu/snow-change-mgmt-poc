@@ -1,9 +1,7 @@
 import os
 import sys
-from utils.sn_client import get_sn_session, check_response, set_output
-
-DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-
+from utils.sn_utils import get_sn_session, check_response, set_output
+from servicenow.constants import SN_TABLE_CHANGE_TASK, DOCX_CONTENT_TYPE
 
 def main():
     try:
@@ -18,7 +16,7 @@ def main():
 
         url = f"{instance}/api/now/attachment/file"
         params = {
-            "table_name": "change_task",
+            "table_name": SN_TABLE_CHANGE_TASK,
             "table_sys_id": task_sysid,
             "file_name": file_name,
         }

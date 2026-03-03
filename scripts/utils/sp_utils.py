@@ -26,6 +26,11 @@ def get_token():
     return token
 
 
+def check_sp_response(response, expected=(200,), context="SharePoint request"):
+    if response.status_code not in expected:
+        raise RuntimeError(f"{context} failed with HTTP {response.status_code}: {response.text[:500]}")
+
+
 if __name__ == "__main__":
     try:
         token = get_token()
