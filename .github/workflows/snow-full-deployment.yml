@@ -123,7 +123,7 @@ jobs:
           SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
-          SP_SITE_URL: ${{ secrets.SP_SITE_URL }}
+          SP_SITE_URL: ${{ vars.SP_SITE_URL }}
         run: python scripts/sharepoint/store_upload.py
       
       - name: Upload DRAFT to artifact (SharePoint simulation)
@@ -141,7 +141,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "DRAFT template has been created and stored." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Store link:** ${{ steps.store_upload.outputs.store_link }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Store link:** [${{ steps.store_upload.outputs.store_link }}](${{ steps.store_upload.outputs.store_link }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Note:** SharePoint is currently simulated. In the real implementation, this will be a SharePoint folder per change (e.g., ${{ needs.create_snow_change.outputs.chg_number }})." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -193,7 +193,7 @@ jobs:
           SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
-          SP_SITE_URL: ${{ secrets.SP_SITE_URL }}
+          SP_SITE_URL: ${{ vars.SP_SITE_URL }}
         run: python scripts/sharepoint/store_download.py
       
       - name: Verify downloaded template
