@@ -1,10 +1,9 @@
 import os
 import sys
-from urllib.parse import urlparse
 import requests
 from utils.sn_utils import set_output
-from utils.sp_utils import get_token, check_sp_response
-from sharepoint.constants import *
+from utils.sp_utils import get_token, check_sp_response, get_graph_drive_id
+from sharepoint.constants import SP_DEFAULT_BASE_FOLDER, DOCX_CONTENT_TYPE
 
 def main():
     try:
@@ -44,43 +43,25 @@ def _upload_to_sharepoint(chg_number, local_file_path):
     site_url = os.environ["SP_SITE_URL"].rstrip("/")
     base_folder = os.environ.get("SP_FOLDER", SP_DEFAULT_BASE_FOLDER)
 
-    site_relative = urlparse(site_url).path
-    folder_server_relative = f"{site_relative}/{SP_DOCUMENT_LIBRARY}/{base_folder}/{chg_number}"
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/json;odata=verbose",
-    }
-
-    _ensure_folder_exists(site_url, folder_server_relative, headers)
+    site_id, drive_id = get_graph_drive_id(site_url, token)
 
     file_name = os.path.basename(local_file_path)
-    upload_url = f"{site_url}/_api/web/GetFolderByServerRelativeUrl('{folder_server_relative}')/Files/add(url='{file_name}',overwrite=true)"
+    upload_path = f"{base_folder}/{chg_number}/{file_name}"
 
     with open(local_file_path, "rb") as f:
         file_content = f.read()
 
-    upload_resp = requests.post(upload_url, headers={
-        **headers,
-        "Content-Type": DOCX_CONTENT_TYPE,
-    }, data=file_content)
-
+    upload_resp = requests.put(
+        f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives/{drive_id}/items/root:/{upload_path}:/content",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": DOCX_CONTENT_TYPE,
+        },
+        data=file_content,
+    )
     check_sp_response(upload_resp, expected=(200, 201), context="Upload")
 
-    server_relative = upload_resp.json()["d"]["ServerRelativeUrl"]
-    hostname = f"https://{urlparse(site_url).hostname}"
-    return f"{hostname}{server_relative}"
-
-
-def _ensure_folder_exists(site_url, folder_server_relative, headers):
-    resp = requests.post(
-        f"{site_url}/_api/web/folders",
-        headers={**headers, "Content-Type": "application/json;odata=verbose"},
-        json={"__metadata": {"type": "SP.Folder"}, "ServerRelativeUrl": folder_server_relative},
-    )
-    if resp.status_code == 201 or (resp.status_code == 500 and SP_ERR_FOLDER_ALREADY_EXISTS in resp.text):
-        return
-    raise RuntimeError(f"Folder creation failed with HTTP {resp.status_code}: {resp.text[:500]}")
+    return upload_resp.json()["webUrl"]
 
 
 def _upload_to_artifact():

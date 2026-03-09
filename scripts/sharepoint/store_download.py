@@ -1,9 +1,8 @@
 import os
 import sys
-from urllib.parse import urlparse
 import requests
-from utils.sp_utils import get_token, check_sp_response
-from sharepoint.constants import SP_DEFAULT_BASE_FOLDER, SP_DOCUMENT_LIBRARY
+from utils.sp_utils import get_token, check_sp_response, get_graph_drive_id
+from sharepoint.constants import SP_DEFAULT_BASE_FOLDER
 
 def main():
     try:
@@ -32,16 +31,15 @@ def _download_from_sharepoint(download_to_path):
     site_url = os.environ["SP_SITE_URL"].rstrip("/")
     base_folder = os.environ.get("SP_FOLDER", SP_DEFAULT_BASE_FOLDER)
 
-    site_relative = urlparse(site_url).path
-    folder_server_relative = f"{site_relative}/{SP_DOCUMENT_LIBRARY}/{base_folder}/{chg_number}"
+    site_id, drive_id = get_graph_drive_id(site_url, token)
 
     file_name = os.path.basename(download_to_path)
-    download_url = f"{site_url}/_api/web/GetFolderByServerRelativeUrl('{folder_server_relative}')/Files('{file_name}')/$value"
+    download_path = f"{base_folder}/{chg_number}/{file_name}"
 
-    download_resp = requests.get(download_url, headers={
-        "Authorization": f"Bearer {token}",
-    })
-
+    download_resp = requests.get(
+        f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives/{drive_id}/items/root:/{download_path}:/content",
+        headers={"Authorization": f"Bearer {token}"},
+    )
     check_sp_response(download_resp, context="Download")
 
     with open(download_to_path, "wb") as f:

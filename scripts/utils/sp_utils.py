@@ -1,5 +1,6 @@
 import os
 import sys
+from urllib.parse import urlparse
 import requests
 
 def get_token():
@@ -13,7 +14,7 @@ def get_token():
         "grant_type": "client_credentials",
         "client_id": client_id,
         "client_secret": client_secret,
-        "scope": "https://pgone.sharepoint.com/.default",
+        "scope": "https://graph.microsoft.com/.default",
     })
 
     if response.status_code != 200:
@@ -24,6 +25,27 @@ def get_token():
         raise RuntimeError("No access_token in response")
 
     return token
+
+
+def get_graph_drive_id(site_url, token):
+    parsed = urlparse(site_url)
+    hostname = parsed.hostname
+    site_path = parsed.path.rstrip("/")
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+
+    site_resp = requests.get(
+        f"https://graph.microsoft.com/v1.0/sites/{hostname}:{site_path}",
+        headers=headers,
+    )
+    check_sp_response(site_resp, context="Get site")
+    site_id = site_resp.json()["id"]
+
+    drive_resp = requests.get(
+        f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive",
+        headers=headers,
+    )
+    check_sp_response(drive_resp, context="Get drive")
+    return site_id, drive_resp.json()["id"]
 
 
 def check_sp_response(response, expected=(200,), context="SharePoint request"):
