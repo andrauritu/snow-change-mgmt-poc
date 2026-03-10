@@ -7,14 +7,8 @@ from sharepoint.constants import SP_DEFAULT_BASE_FOLDER, DOCX_CONTENT_TYPE
 
 def main():
     try:
-        use_sharepoint, chg_number, local_file_path, file_size = _read_inputs()
-
-        if use_sharepoint == "true":
-            store_link = _upload_to_sharepoint(chg_number, local_file_path)
-            print(f"Document store: SharePoint")
-        else:
-            store_link = _upload_to_artifact()
-            print(f"Document store: artifact (SharePoint simulation)")
+        chg_number, local_file_path, file_size = _read_inputs()
+        store_link = _upload_to_sharepoint(chg_number, local_file_path)
 
         print(f"File: {local_file_path} ({file_size} bytes)")
         print(f"Change: {chg_number}")
@@ -27,7 +21,6 @@ def main():
 
 
 def _read_inputs():
-    use_sharepoint = os.environ.get("USE_SHAREPOINT", "false").lower()
     chg_number = os.environ["CHG_NUMBER"]
     local_file_path = os.environ["LOCAL_FILE_PATH"]
 
@@ -35,7 +28,7 @@ def _read_inputs():
         raise RuntimeError(f"File not found: {local_file_path}")
 
     file_size = os.path.getsize(local_file_path)
-    return use_sharepoint, chg_number, local_file_path, file_size
+    return chg_number, local_file_path, file_size
 
 
 def _upload_to_sharepoint(chg_number, local_file_path):
@@ -62,10 +55,6 @@ def _upload_to_sharepoint(chg_number, local_file_path):
     check_sp_response(upload_resp, expected=(200, 201), context="Upload")
 
     return upload_resp.json()["webUrl"]
-
-
-def _upload_to_artifact():
-    return "artifact://validation-testing-draft"
 
 
 if __name__ == "__main__":
