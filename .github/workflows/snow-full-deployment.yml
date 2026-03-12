@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest # in ADO this would be pool
     env:
       PYTHONPATH: ${{ github.workspace }}/scripts
-      SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
+      SN_INSTANCE: ${{ vars.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
       SN_STD_TEMPLATE_SYSID: ${{ secrets.SN_STD_TEMPLATE_SYSID }}
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: ${{ github.workspace }}/scripts
-      SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
+      SN_INSTANCE: ${{ vars.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
     needs: 
@@ -121,7 +121,9 @@ jobs:
         run: |
           echo "### ACTION REQUIRED" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "DRAFT template uploaded to SharePoint." >> $GITHUB_STEP_SUMMARY
+          echo "DRAFT template has been created and stored." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Change:** [${{ needs.create_snow_change.outputs.chg_number }}](https://${{ vars.SN_INSTANCE }}/now/nav/ui/classic/params/target/change_request.do%3Fsys_id%3D${{ needs.create_snow_change.outputs.chg_sysid }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Store link:** [${{ steps.store_upload.outputs.store_link }}](${{ steps.store_upload.outputs.store_link }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -147,7 +149,7 @@ jobs:
     environment: finalize
     env:
       PYTHONPATH: ${{ github.workspace }}/scripts
-      SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
+      SN_INSTANCE: ${{ vars.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
     steps:
@@ -191,7 +193,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: ${{ github.workspace }}/scripts
-      SN_INSTANCE: ${{ secrets.SN_INSTANCE }}
+      SN_INSTANCE: ${{ vars.SN_INSTANCE }}
       SN_USERNAME: ${{ secrets.SN_USERNAME }}
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
     needs:
