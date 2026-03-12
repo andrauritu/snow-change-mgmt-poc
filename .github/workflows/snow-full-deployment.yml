@@ -123,7 +123,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "DRAFT template has been created and stored." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Change:** [${{ needs.create_snow_change.outputs.chg_number }}](https://${{ vars.SN_INSTANCE }}/now/nav/ui/classic/params/target/change_request.do%3Fsys_id%3D${{ needs.create_snow_change.outputs.chg_sysid }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Change:** [${{ needs.create_snow_change.outputs.chg_number }}](${{ vars.SN_INSTANCE }}/now/nav/ui/classic/params/target/change_request.do%3Fsys_id%3D${{ needs.create_snow_change.outputs.chg_sysid }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Store link:** [${{ steps.store_upload.outputs.store_link }}](${{ steps.store_upload.outputs.store_link }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
